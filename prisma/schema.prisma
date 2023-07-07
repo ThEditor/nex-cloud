@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -15,4 +16,18 @@ model User {
     hash      String
 
     @@map("users")
+}
+
+model Song {
+  id           Int      @id @default(autoincrement())
+
+  title        String
+  thumbnailUrl String?
+  duration     Int
+  author       String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("songs")
 }
