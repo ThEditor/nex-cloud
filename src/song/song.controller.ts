@@ -2,11 +2,10 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { SongService } from './song.service';
@@ -16,14 +15,8 @@ import { JwtGuard } from 'src/auth/guard';
 export class SongController {
   constructor(private songService: SongService) {}
 
-  @Get(':id')
-  get(@Param('id', ParseIntPipe) id: number) {
-    return this.songService.get(id);
-  }
-
-  @HttpCode(HttpStatus.OK)
-  @Post('search')
-  search(@Body('query') query: string) {
+  @Get('search')
+  search(@Query('query') query: string) {
     return this.songService.search(query);
   }
 
@@ -31,5 +24,10 @@ export class SongController {
   @Post('stream')
   stream(@Body('id', ParseIntPipe) id: number) {
     return this.songService.stream(id);
+  }
+
+  @Get(':id')
+  get(@Param('id', ParseIntPipe) id: number) {
+    return this.songService.get(id);
   }
 }
