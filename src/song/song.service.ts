@@ -26,6 +26,30 @@ export class SongService {
     return { items: songs };
   }
 
+  async latest(skip: number, limit: number) {
+    return this.prismaService.song.findMany({
+      orderBy: [
+        {
+          releasedAt: 'desc',
+        },
+      ],
+      skip,
+      take: limit,
+    });
+  }
+
+  async recent(skip: number, limit: number) {
+    return this.prismaService.song.findMany({
+      orderBy: [
+        {
+          createdAt: 'desc',
+        },
+      ],
+      skip,
+      take: limit,
+    });
+  }
+
   async stream(id: number) {
     const song = await this.get(id);
     const file = join(

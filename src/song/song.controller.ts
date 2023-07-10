@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { SongService } from './song.service';
 import { JwtGuard } from 'src/auth/guard';
+import { PaginationDto } from './dto';
 
 @Controller('songs')
 export class SongController {
@@ -18,6 +19,16 @@ export class SongController {
   @Get('search')
   search(@Query('query') query: string) {
     return this.songService.search(query);
+  }
+
+  @Get('latest')
+  latest(@Query() { skip, limit }: PaginationDto) {
+    return this.songService.latest(skip, limit);
+  }
+
+  @Get('recent')
+  recent(@Query() { skip, limit }: PaginationDto) {
+    return this.songService.recent(skip, limit);
   }
 
   @UseGuards(JwtGuard)

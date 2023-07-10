@@ -26,6 +26,7 @@ model Song {
   duration     Int
   author       String
   
+  releasedAt   DateTime
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
