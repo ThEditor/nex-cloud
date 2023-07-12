@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { JwtPayload } from '../struct';
 
 @Injectable()
 export class JwtGuard implements CanActivate {
@@ -24,10 +25,7 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     try {
-      const payload: {
-        sub: number;
-        email: string;
-      } = await this.jwt.verifyAsync(token, {
+      const payload: JwtPayload = await this.jwt.verifyAsync(token, {
         secret: this.config.get('JWT_SECRET'),
       });
 
@@ -37,6 +35,10 @@ export class JwtGuard implements CanActivate {
           id: payload.sub,
         },
       });
+
+      if (payload.issuedAt < user.hashIssuedAt)
+        throw new UnauthorizedException('Token expired');
+
       delete user.hash;
 
       request['user'] = user;

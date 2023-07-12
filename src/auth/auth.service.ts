@@ -5,6 +5,7 @@ import * as argon from 'argon2';
 import { Prisma } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtPayload } from './struct';
 
 @Injectable()
 export class AuthService {
@@ -54,9 +55,10 @@ export class AuthService {
   }
 
   async signToken(userId: number, email: string) {
-    const payload = {
+    const payload: JwtPayload = {
       sub: userId,
       email,
+      issuedAt: new Date(),
     };
     return {
       access_token: await this.jwt.signAsync(payload, {
