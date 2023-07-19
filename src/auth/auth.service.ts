@@ -79,7 +79,7 @@ export class AuthService {
       },
     });
 
-    if (!user || !(await argon.verify(user.hashedRt, rt)))
+    if (!user || !user.hashedRt || !(await argon.verify(user.hashedRt, rt)))
       throw new ForbiddenException('Invalid credentials');
 
     const { access_token } = await this.signToken(user.id, user.email);
