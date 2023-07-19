@@ -5,7 +5,7 @@ import * as argon from 'argon2';
 import { Prisma } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtPayload } from './struct';
+import { AuthToken, JwtPayload } from './struct';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +15,7 @@ export class AuthService {
     private config: ConfigService,
   ) {}
 
-  async signupLocal(dto: AuthDto) {
+  async signupLocal(dto: AuthDto): Promise<AuthToken> {
     // create password hash
     const hash = await argon.hash(dto.password);
 
@@ -28,7 +28,9 @@ export class AuthService {
         },
       });
 
-      return this.signToken(user.id, user.email);
+      const tokens = await this.signToken(user.id, user.email);
+      await this.updateRtHash(user.id, tokens.refresh_token);
+      return tokens;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -39,7 +41,7 @@ export class AuthService {
     }
   }
 
-  async signinLocal(dto: AuthDto) {
+  async signinLocal(dto: AuthDto): Promise<AuthToken> {
     // find user by email
     const user = await this.prisma.user.findUnique({
       where: {
@@ -51,20 +53,60 @@ export class AuthService {
     if (!user || !(await argon.verify(user.hash, dto.password)))
       throw new ForbiddenException('Invalid credentials');
 
-    return this.signToken(user.id, user.email);
+    const tokens = await this.signToken(user.id, user.email);
+    await this.updateRtHash(user.id, tokens.refresh_token);
+    return tokens;
   }
 
-  async signToken(userId: number, email: string) {
+  async logout(userId: number) {
+    await this.prisma.user.updateMany({
+      where: {
+        id: userId,
+        hashedRt: {
+          not: null,
+        },
+      },
+      data: {
+        hashedRt: null,
+      },
+    });
+  }
+
+  refreshTokens() {
+    // todo: populate
+  }
+
+  async signToken(userId: number, email: string): Promise<AuthToken> {
     const payload: JwtPayload = {
       sub: userId,
       email,
-      issuedAt: new Date(),
     };
-    return {
-      access_token: await this.jwt.signAsync(payload, {
-        expiresIn: '12h',
-        secret: this.config.get('JWT_SECRET'),
+
+    const [at, rt] = await Promise.all([
+      this.jwt.signAsync(payload, {
+        expiresIn: 60 * 15,
+        secret: this.config.get<string>('JWT_SECRET'),
       }),
+      this.jwt.signAsync(payload, {
+        expiresIn: 60 * 60 * 24 * 7,
+        secret: this.config.get<string>('JWT_SECRET'),
+      }),
+    ]);
+
+    return {
+      access_token: at,
+      refresh_token: rt,
     };
+  }
+
+  async updateRtHash(userId: number, rt: string) {
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        hashedRt: await argon.hash(rt),
+      },
+    });
   }
 }

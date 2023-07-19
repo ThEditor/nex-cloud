@@ -26,7 +26,7 @@ export class JwtGuard implements CanActivate {
     }
     try {
       const payload: JwtPayload = await this.jwt.verifyAsync(token, {
-        secret: this.config.get('JWT_SECRET'),
+        secret: this.config.get<string>('JWT_SECRET'),
       });
 
       // fetch user from prisma
@@ -35,9 +35,6 @@ export class JwtGuard implements CanActivate {
           id: payload.sub,
         },
       });
-
-      if (payload.issuedAt < user.hashIssuedAt)
-        throw new UnauthorizedException('Token expired');
 
       delete user.hash;
 
