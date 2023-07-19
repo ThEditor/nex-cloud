@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { SongModule } from './song/song.module';
+import { AtGuard } from './auth/guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -12,6 +14,12 @@ import { SongModule } from './song/song.module';
     UserModule,
     PrismaModule,
     SongModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AtGuard,
+    },
   ],
 })
 export class AppModule {}
