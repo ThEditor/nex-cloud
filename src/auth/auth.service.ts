@@ -72,7 +72,7 @@ export class AuthService {
     });
   }
 
-  async refreshTokens(userId: number, rt: string) {
+  async refreshTokens(userId: number, rt: string): Promise<AuthToken> {
     const user = await this.prisma.user.findUnique({
       where: {
         id: userId,
@@ -82,9 +82,12 @@ export class AuthService {
     if (!user || !(await argon.verify(user.hashedRt, rt)))
       throw new ForbiddenException('Invalid credentials');
 
-    const tokens = await this.signToken(user.id, user.email);
-    await this.updateRtHash(user.id, tokens.refresh_token);
-    return tokens;
+    const { access_token } = await this.signToken(user.id, user.email);
+
+    return {
+      access_token,
+      refresh_token: rt,
+    };
   }
 
   async signToken(userId: number, email: string): Promise<AuthToken> {
