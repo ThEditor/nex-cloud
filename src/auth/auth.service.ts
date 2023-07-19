@@ -72,8 +72,19 @@ export class AuthService {
     });
   }
 
-  refreshTokens() {
-    // todo: populate
+  async refreshTokens(userId: number, rt: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user || !(await argon.verify(user.hashedRt, rt)))
+      throw new ForbiddenException('Invalid credentials');
+
+    const tokens = await this.signToken(user.id, user.email);
+    await this.updateRtHash(user.id, tokens.refresh_token);
+    return tokens;
   }
 
   async signToken(userId: number, email: string): Promise<AuthToken> {
